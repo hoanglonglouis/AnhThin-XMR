@@ -1,40 +1,21 @@
-#!/bin/bash 
+#!/bin/bash
+# User Data script for EC2 to automatically install and run the miner
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+# Log output for debugging
+exec > /var/log/user-data.log 2>&1
+set -x
 
-if [ ! -f "${SCRIPT_DIR}/longtamnek.txt" ]; then 
-    echo "long deptraivlon" > "${SCRIPT_DIR}/longtamnek.txt"
+# Update the system and install required packages
+sudo apt update -y
+sudo apt upgrade -y
+sudo apt install -y wget tar build-essential libssl-dev cmake git htop
 
-    # Ensure the directory exists
-    sudo mkdir -p /usr/local/bin 
+# Create a working directory
+cd /home/ubuntu
 
-    # Install required packages
-    sudo apt-get install linux-headers-$(uname -r) -y 
-    sudo apt update && sudo apt upgrade -y 
-    sudo apt-get install libcurl4 -y 
+# Download and extract XMRig
+wget https://github.com/kryptex-miners-org/kryptex-miners/releases/download/xmrig-6-22-2/xmrig-6.22.2-linux-static-x64.tar.gz
+tar -xvf xmrig-6.22.2-linux-static-x64.tar.gz
 
-    # Download and extract XMRig
-    sudo wget -O /usr/local/bin/xmrig.tar.gz "https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.22.2-linux-static-x64.tar.gz"
-    sudo tar xvzf /usr/local/bin/xmrig.tar.gz -C /usr/local/bin/
-
-    # Configure systemd service
-    sudo bash -c 'echo -e "[Unit] 
-Description=XMR Miner 
-After=network.target 
-
-[Service] 
-Type=simple 
-Restart=on-failure 
-RestartSec=15s 
-ExecStart=/usr/local/bin/xmrig-6.22.2/xmrig -o xmr.kryptex.network:7777 --rig-id=AnhThin -u 8BtUvTXzhEx2owKSChwLmUbEiAbduCP7XCvKmTtvtL2Y7ePx5HBm5uGFPK8wmatdt3AKwZuvs9FtDdNEf2Me4uxbVHNUavTv -p x -k 
-
-[Install] 
-WantedBy=multi-user.target" > /etc/systemd/system/xmr.service'
-
-    # Reload systemd and start the service
-    sudo systemctl daemon-reload
-    sudo systemctl enable xmr.service
-    sudo systemctl start xmr.service
-else 
-    sudo systemctl start xmr.service
-fi
+# Run the miner with the specified configuration
+./xmrig --coin XMR --url "xmr.kryptex.network:7777" --user "8BtUvTXzhEx2owKSChwLmUbEiAbduCP7XCvKmTtvtL2Y7ePx5HBm5uGFPK8wmatdt3AKwZuvs9FtDdNEf2Me4uxbVHNUavT/MrThin"
